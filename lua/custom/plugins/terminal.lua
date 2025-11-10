@@ -1,35 +1,27 @@
-local term_buf = nil
-local term_win = nil
-
-local function toggle_term(split_cmd)
-  if term_win and vim.api.nvim_win_is_valid(term_win) then
-    vim.api.nvim_win_close(term_win, true)
-    term_win = nil
-    return
-  end
+local function new_term(split_cmd)
   vim.cmd(split_cmd)
   vim.cmd 'terminal'
   vim.cmd 'startinsert'
-  term_win = vim.api.nvim_get_current_win()
-  term_buf = vim.api.nvim_get_current_buf()
 end
 
-local function close_term()
-  if term_buf and vim.api.nvim_buf_is_valid(term_buf) then
-    vim.api.nvim_buf_delete(term_buf, { force = true })
-    term_buf = nil
-    term_win = nil
+local function close_current_term()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local ok, term_type = pcall(vim.api.nvim_buf_get_option, bufnr, 'buftype')
+  if ok and term_type == 'terminal' then
+    vim.api.nvim_buf_delete(bufnr, { force = true })
   end
 end
 
 -- Keymaps
 vim.keymap.set('n', '<leader>ttb', function()
-  toggle_term 'belowright split'
+  new_term 'belowright split'
 end, { desc = 'Toggle Terminal to the Bottom' })
+
 vim.keymap.set('n', '<leader>ttr', function()
-  toggle_term 'vsplit'
+  new_term 'vsplit'
 end, { desc = 'Toggle Terminal to the Right' })
-vim.keymap.set('n', '<leader>ttt', close_term, { desc = 'Close terminal' })
+
+vim.keymap.set('n', '<leader>ttt', close_current_term, { desc = 'Close terminal' })
 
 -- Terminal navigation
 vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { desc = 'Exit terminal mode' })
